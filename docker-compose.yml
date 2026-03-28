@@ -1,0 +1,44 @@
+services: 
+  app:
+    build: .
+    container_name: expenses_app
+
+    ports: 
+      - "3000:3000"
+
+    environment:
+      DB_HOST: postgresdb
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PORT: ${PORT}
+
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+
+  postgresdb:
+    image: "postgres:16"
+    container_name: expenses_postgres
+
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql 
+    
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
