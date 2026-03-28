@@ -12,7 +12,30 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    steps:
+    services:
+      postgres:
+        image: postgres:16
+        env: 
+          DB_NAME: expenses_db
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+        ports: 
+          -5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_NAME: expenses_db
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        PORT: 3000
+
+      steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -23,6 +46,12 @@ jobs:
 
       - name: Install dependecies 
         run: npm ci 
+
+
+      - name: Run database migrations
+        run: psql -h localhost -U postgres -d expenses_db -f postgres/init.sql
+        env:
+          PGPASSWORD: postgres
 
       - name: Run tests  
         run: npm test
